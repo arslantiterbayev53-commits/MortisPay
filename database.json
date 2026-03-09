@@ -1,0 +1,56 @@
+{
+  "users": {
+    "8753910684": {
+      "id": 8753910684,
+      "name": "aslam",
+      "balance": {
+        "USD": 0,
+        "RUB": 0,
+        "UZS": 0
+      },
+      "goals": [
+        {
+          "title": "Ayfoncik",
+          "goal": 2000,
+          "collected": 2000,
+          "currency": "RUB"
+        },
+        {
+          "title": "🌐 Язык",
+          "goal": 100,
+          "collected": 0,
+          "currency": "USD"
+        },
+        {
+          "title": "100",
+          "goal": 200,
+          "collected": 0,
+          "currency": "UZS"
+        },
+        {
+          "title": "aslam",
+          "goal": 2000000,
+          "collected": 0,
+          "currency": "UZS"
+        }
+      ],
+      "lang": "RU",
+      "reminders": true
+    },
+    "6736116111": {
+      "id": 6736116111,
+      "name": "aslam",
+      "balance": {
+        "USD": 0,
+        "RUB": 0,
+        "UZS": 0
+      },
+      "goals": [],
+      "lang": "RU",
+      "reminders": true
+    }
+  },
+  "settings": {
+    "startMessage": {}
+  }
+}
