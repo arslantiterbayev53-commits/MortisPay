@@ -2,7 +2,7 @@ const fs = require('fs');
 const TelegramBot = require('node-telegram-bot-api');
 
 // ================= НАСТРОЙКИ =================
-const TOKEN = 'ТВОЙ_ТОКЕН_ЗДЕСЬ'; 
+const TOKEN = '8748413994:AAFfy4rZiqpneq2YvQM4Pdj8k5yMfd9D_SY'; 
 const MY_ID = '6736116111'; 
 // =============================================
 
