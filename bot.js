@@ -1,5 +1,13 @@
 const fs = require('fs');
 const TelegramBot = require('node-telegram-bot-api');
+const express = require('express'); // Нужно для Render
+
+// ================= СЕРВЕР ДЛЯ RENDER =================
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.get('/', (req, res) => res.send('MortisPay Bot is Alive! 🚀'));
+app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}`));
+// =====================================================
 
 // ================= НАСТРОЙКИ =================
 const TOKEN = '8748413994:AAFfy4rZiqpneq2YvQM4Pdj8k5yMfd9D_SY'; 
@@ -91,7 +99,6 @@ bot.on('message', (msg) => {
 
     const L = LANGS[db.users[id].lang] || LANGS.RU;
 
-    // Админка без рассылки
     if (text === "/admin" && id === MY_ID) {
         const total = Object.keys(db.users).length;
         return bot.sendMessage(id, `📊 *Админ-панель*\n\nВсего юзеров: ${total}\n/users - Список юзеров`, { parse_mode: "Markdown" });
@@ -101,7 +108,6 @@ bot.on('message', (msg) => {
         return bot.sendMessage(id, L.start.replace("{name}", db.users[id].name), getMenu(id));
     }
 
-    // Смена языка (RU -> UZ -> EN)
     else if (text === L.btns[4]) {
         const lOrder = ["RU", "UZ", "EN"];
         const nextIdx = (lOrder.indexOf(db.users[id].lang) + 1) % 3;
@@ -110,7 +116,6 @@ bot.on('message', (msg) => {
         bot.sendMessage(id, LANGS[db.users[id].lang].languageSet, getMenu(id));
     }
 
-    // Список целей с расчетом остатка
     else if (text === L.btns[0]) {
         const goals = db.users[id].goals;
         if (!goals.length) return bot.sendMessage(id, L.noGoals);
@@ -119,15 +124,11 @@ bot.on('message', (msg) => {
             const left = g.goal - g.collected;
             const remains = left > 0 ? left : 0;
             const progress = Math.min(100, Math.floor((g.collected / g.goal) * 100));
-            
-            res += `${i + 1}. *${g.title}*\n`;
-            res += `💰 ${g.collected} / ${g.goal} ${g.currency} (${progress}%)\n`;
-            res += `📉 ${L.remains} *${remains} ${g.currency}*\n\n`;
+            res += `${i + 1}. *${g.title}*\n💰 ${g.collected} / ${g.goal} ${g.currency} (${progress}%)\n📉 ${L.remains} *${remains} ${g.currency}*\n\n`;
         });
         bot.sendMessage(id, res, { parse_mode: "Markdown" });
     }
 
-    // Новая цель (добавлен RUB)
     else if (text === L.btns[1]) {
         bot.sendMessage(id, L.enterGoalName).then(() => {
             bot.once('message', (m1) => {
@@ -150,7 +151,6 @@ bot.on('message', (msg) => {
         });
     }
 
-    // Пополнение и удаление (логика как раньше)
     else if (text === L.btns[2]) {
         const goals = db.users[id].goals;
         if (!goals.length) return bot.sendMessage(id, L.noGoals);
