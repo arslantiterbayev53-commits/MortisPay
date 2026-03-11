@@ -4,22 +4,21 @@ const express = require("express");
 const cron = require("node-cron");
 
 // ==========================================
-// КОНФИГУРАЦИЯ (Арслан, проверь ID и Токен)
+// CONFIGURATION & INITIALIZATION
 // ==========================================
 const TOKEN = "8748413994:AAFfy4rZiqpneq2YvQM4Pdj8k5yMfd9D_SY";
-const MY_ID = "6736116111"; 
+const MY_ID = "6736116111"; // ID Арслана
 const DB_FILE = "users.json";
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 const app = express();
 
-// Для работы на Render
 const PORT = process.env.PORT || 3000;
-app.get("/", (req, res) => res.send("MortisPay PRO Engine: Active 🚀"));
-app.listen(PORT, () => console.log(`[SYSTEM] Port: ${PORT}`));
+app.get("/", (req, res) => res.send("MortisPay ULTIMATE 2026 Engine: Online 🚀"));
+app.listen(PORT, () => console.log(`[SYSTEM] Server active on port ${PORT}`));
 
 // ==========================================
-// БАЗА ДАННЫХ
+// DATABASE LOGIC
 // ==========================================
 let db = { users: {}, scheduledTask: null };
 
@@ -27,6 +26,7 @@ function loadDB() {
     if (fs.existsSync(DB_FILE)) {
         try {
             db = JSON.parse(fs.readFileSync(DB_FILE));
+            if (!db.scheduledTask) db.scheduledTask = null;
         } catch (e) {
             db = { users: {}, scheduledTask: null };
         }
@@ -36,7 +36,7 @@ function saveDB() { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); }
 loadDB();
 
 // ==========================================
-// ПЕРЕВОДЫ (RU / UZ)
+// MULTILINGUAL ENGINE (RU, UZ, EN)
 // ==========================================
 const LANG = {
     RU: {
@@ -46,29 +46,24 @@ const LANG = {
         m_plan: "📈 План", m_rem: "🔔 Настройка уведомлений", m_lang: "🌐 Язык",
         no_g: "❌ У вас пока нет созданных целей.",
         ent_n: "🏷 Введите название цели:",
-        ent_s: "💵 Какую сумму нужно собрать? (Только число):",
+        ent_s: "💵 Какую сумму нужно собрать? (Введите число):",
         ent_v: "💎 Выберите валюту:",
-        ent_a: "💳 Какую сумму внести?",
-        created: "✅ Цель успешно создана!",
-        added: "💰 Пополнено!",
-        deleted: "🗑 Цель удалена.",
-        rem_set: "🔔 Выберите частоту (в 8:00 утра):",
-        rem_on: "✅ Настроено!",
-        rem_off: "🔕 Выключено.",
+        ent_a: "💳 Какую сумму вы хотите внести сейчас?",
+        created: "✅ Цель успешно создана! Начните копить прямо сейчас.",
+        added: "💰 Баланс цели успешно пополнен!",
+        deleted: "🗑 Цель была полностью удалена.",
+        rem_set: "🔔 Выберите частоту уведомлений (придут в 8:00 утра):",
+        rem_on: "✅ Уведомления настроены! Я буду напоминать вам вовремя.",
+        rem_off: "🔕 Уведомления выключены.",
         rem_d: "Каждый день", rem_w: "Раз в неделю", rem_m: "Раз в месяц", rem_s: "Выключить",
-        sel_g: "🔢 Выберите номер цели:",
-        goal_done: "🎉 Поздравляем! Цель достигнута! 🏆",
-        err_num: "⚠️ Ошибка! Введите только число (цифры).",
-        cron_msg: "☀️ Доброе утро! Не забудьте пополнить свою цель в MortisPay! 💸",
-        admin_rem: "📣 Напоминание: Пожалуйста, пополните свои цели сегодня! 🚀",
-        stat_msg: "📊 **Статистика:**\nЦелей: {count}\nСобрано: {total}",
-        plan_msg: "📈 **План (1000 USD):**\n• 30 дней: 33.3$ / день\n• 60 дней: 16.6$ / день\n• 90 дней: 11.1$ / день",
-        hist_empty: "📜 История пуста.",
-        hist_title: "📜 **Последние операции:**",
-        // Админка на RU
-        adm_main: "💎 **Админ-панель:**\n/users - Список юзеров\n/remindall - Быстрое напоминание\n/broadcast - Срочная рассылка\n/schedule - Запланировать пост",
-        adm_sch_t: "Напишите время для рассылки в формате ЧЧ:ММ (например 15:30):",
-        adm_sch_m: "Теперь напишите текст сообщения:"
+        sel_g: "🔢 Выберите номер цели из вашего списка:",
+        goal_done: "🎉 ПОЗДРАВЛЯЕМ! Вы достигли своей цели! 🏆",
+        err_num: "⚠️ Ошибка! Пожалуйста, введите корректное число (цифры).",
+        cron_msg: "☀️ Доброе утро! Не забудьте пополнить свою цель сегодня! 💸",
+        news_head: "📢 **НОВОСТИ ОБНОВЛЕНИЯ:**",
+        adm_main: "💎 **Админ-панель:**\n/users - Список\n/remindall - Напомнить всем\n/broadcast - Срочная рассылка\n/schedule - Запланировать рассылку",
+        adm_time: "Введите время в формате ЧЧ:ММ (например 14:30):",
+        adm_text: "Введите текст для запланированной рассылки:"
     },
     UZ: {
         welcome: "👋 **MortisPay**-ga xush kelibsiz, {name}!",
@@ -77,29 +72,50 @@ const LANG = {
         m_plan: "📈 Reja", m_rem: "🔔 Bildirishnomalar", m_lang: "🌐 Til",
         no_g: "❌ Sizda hozircha maqsadlar yo'q.",
         ent_n: "🏷 Maqsad nomini kiriting:",
-        ent_s: "💵 Qancha yig'ish kerak? (Faqat raqam):",
+        ent_s: "💵 Qancha yig'ish kerak? (Raqam kiriting):",
         ent_v: "💎 Valyutani tanlang:",
         ent_a: "💳 Qancha summa qo'shmoqchisiz?",
-        created: "✅ Maqsad yaratildi!",
-        added: "💰 To'ldirildi!",
-        deleted: "🗑 Maqsad o'chirildi.",
-        rem_set: "🔔 Bildirishnoma vaqtini tanlang (soat 8:00 da):",
-        rem_on: "✅ Sozlandi!",
-        rem_off: "🔕 O'chirildi.",
+        created: "✅ Maqsad muvaffaqiyatli yaratildi!",
+        added: "💰 Maqsad balansi to'ldirildi!",
+        deleted: "🗑 Maqsad o'chirib tashlandi.",
+        rem_set: "🔔 Bildirishnoma chastotasini tanlang (soat 8:00 da):",
+        rem_on: "✅ Bildirishnomalar sozlandi!",
+        rem_off: "🔕 Bildirishnomalar o'chirildi.",
         rem_d: "Har kuni", rem_w: "Haftada bir", rem_m: "Oyda bir", rem_s: "O'chirish",
-        sel_g: "🔢 Maqsad raqamini tanlang:",
-        goal_done: "🎉 TABRIKLAYMIZ! Maqsadga erishildi! 🏆",
-        err_num: "⚠️ Xato! Faqat raqam kiriting.",
-        cron_msg: "☀️ Xayrli tong! Bugun maqsadingizni to'ldirishni unutmang! 💸",
-        admin_rem: "📣 E'lon: Iltimos, bugun maqsadlaringizni to'ldirishni unutmang! 🚀",
-        stat_msg: "📊 **Statistika:**\nMaqsadlar: {count}\nYig'ildi: {total}",
-        plan_msg: "📈 **Reja (1000 USD):**\n• 30 kun: 33.3$ / kun\n• 60 kun: 16.6$ / kun\n• 90 kun: 11.1$ / kun",
-        hist_empty: "📜 Tarix bo'sh.",
-        hist_title: "📜 **Oxirgi operatsiyalar:**",
-        // Админка на UZ
-        adm_main: "💎 **Admin paneli:**\n/users - Foydalanuvchilar\n/remindall - Tezkor eslatma\n/broadcast - Xabar yuborish\n/schedule - Xabarni rejalashtirish",
-        adm_sch_t: "Xabar vaqtini kiriting HH:MM (masalan 15:30):",
-        adm_sch_m: "Endi xabar matnini yozing:"
+        sel_g: "🔢 Ro'yxatdan maqsad raqamini tanlang:",
+        goal_done: "🎉 TABRIKLAYMIZ! Siz maqsadingizga erishdingiz! 🏆",
+        err_num: "⚠️ Xato! Iltimos faqat raqam kiriting.",
+        cron_msg: "☀️ Xayrli tong! Bugun MortisPay-da maqsadingizni to'ldirishni unutmang! 💸",
+        news_head: "📢 **YANGILIKLAR:**",
+        adm_main: "💎 **Admin paneli:**\n/users - Ro'yxat\n/remindall - Tezkor eslatma\n/broadcast - Xabar yuborish\n/schedule - Xabarni rejalashtirish",
+        adm_time: "Vaqtni kiriting (HH:MM formatida, masalan 14:30):",
+        adm_text: "Rejalashtirilgan xabar matnini yozing:"
+    },
+    EN: {
+        welcome: "👋 Welcome to **MortisPay**, {name}!",
+        m_my: "📊 My Goals", m_add: "➕ New Goal", m_top: "💰 Top up",
+        m_del: "🗑 Delete", m_stat: "📊 Stats", m_hist: "📜 History",
+        m_plan: "📈 Plan", m_rem: "🔔 Reminders", m_lang: "🌐 Language",
+        no_g: "❌ You don't have any goals yet.",
+        ent_n: "🏷 Enter goal name:",
+        ent_s: "💵 Target amount? (Numbers only):",
+        ent_v: "💎 Select currency:",
+        ent_a: "💳 How much to add now?",
+        created: "✅ Goal created successfully!",
+        added: "💰 Added successfully!",
+        deleted: "🗑 Goal deleted.",
+        rem_set: "🔔 Choose frequency (8:00 AM):",
+        rem_on: "✅ Reminders set!",
+        rem_off: "🔕 Disabled.",
+        rem_d: "Daily", rem_w: "Weekly", rem_m: "Monthly", rem_s: "Off",
+        sel_g: "🔢 Choose goal number:",
+        goal_done: "🎉 CONGRATS! Goal achieved! 🏆",
+        err_num: "⚠️ Error! Please enter a valid number.",
+        cron_msg: "☀️ Good morning! Don't forget to save today! 💸",
+        news_head: "📢 **NEW UPDATE:**",
+        adm_main: "💎 **Admin Panel:**\n/users - List\n/remindall - Fast ping\n/broadcast - Immediate news\n/schedule - Message scheduler",
+        adm_time: "Enter time HH:MM (e.g. 14:30):",
+        adm_text: "Enter text for the scheduled post:"
     }
 };
 
@@ -118,37 +134,34 @@ function getMenu(id) {
 }
 
 // ==========================================
-// КРОН-ЗАДАЧИ (8:00 И ПЛАНИРОВЩИК)
+// CRON SCHEDULER (TASHKENT TIME)
 // ==========================================
+
+// Daily Reminders at 8:00 AM
 cron.schedule("0 8 * * *", () => {
-    const today = new Date();
     Object.values(db.users).forEach(u => {
         if (!u.rem_type || u.rem_type === "off") return;
-        let s = false;
-        if (u.rem_type === "daily") s = true;
-        if (u.rem_type === "weekly" && today.getDay() === 1) s = true;
-        if (u.rem_type === "monthly" && today.getDate() === 1) s = true;
-        if (s) bot.sendMessage(u.id, LANG[u.lang].cron_msg).catch(() => {});
+        bot.sendMessage(u.id, LANG[u.lang].cron_msg).catch(() => {});
     });
-});
+}, { timezone: "Asia/Tashkent" });
 
-// Проверка запланированных постов админа каждую минуту
+// Admin Message Scheduler (Checks every minute)
 cron.schedule("* * * * *", () => {
     if (!db.scheduledTask) return;
     const now = new Date();
-    const curTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const curTime = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
     
     if (db.scheduledTask.time === curTime) {
         Object.values(db.users).forEach(u => {
-            bot.sendMessage(u.id, "🔔 **NOTIFICATIONS:**\n\n" + db.scheduledTask.text, { parse_mode: "Markdown" }).catch(() => {});
+            bot.sendMessage(u.id, `${LANG[u.lang].news_head}\n\n${db.scheduledTask.text}`, { parse_mode: "Markdown" }).catch(() => {});
         });
-        db.scheduledTask = null; // Очищаем после отправки
+        db.scheduledTask = null; 
         saveDB();
     }
-});
+}, { timezone: "Asia/Tashkent" });
 
 // ==========================================
-// ОСНОВНОЙ ОБРАБОТЧИК
+// MAIN MESSAGE HANDLER
 // ==========================================
 bot.on("message", (msg) => {
     const id = msg.from.id;
@@ -167,62 +180,67 @@ bot.on("message", (msg) => {
         return bot.sendMessage(id, l.welcome.replace("{name}", u.name), { parse_mode: "Markdown", ...getMenu(id) });
     }
 
-    // --- АДМИН-ЛОГИКА ---
+    // --- ADMIN PANEL LOGIC ---
     if (id.toString() === MY_ID) {
         if (text === "/admin") return bot.sendMessage(id, l.adm_main);
         
         if (text === "/schedule") {
             u.state = "ADM_SCH_TIME"; saveDB();
-            return bot.sendMessage(id, l.adm_sch_t);
+            return bot.sendMessage(id, l.adm_time);
         }
-        
         if (u.state === "ADM_SCH_TIME") {
-            u.temp_sch_time = text; u.state = "ADM_SCH_TEXT"; saveDB();
-            return bot.sendMessage(id, l.adm_sch_m);
+            u.tmp_sch_time = text; u.state = "ADM_SCH_TEXT"; saveDB();
+            return bot.sendMessage(id, l.adm_text);
         }
-        
         if (u.state === "ADM_SCH_TEXT") {
-            db.scheduledTask = { time: u.temp_sch_time, text: text };
+            db.scheduledTask = { time: u.tmp_sch_time, text: text };
             u.state = "IDLE"; saveDB();
-            return bot.sendMessage(id, `✅ Запланировано на ${db.scheduledTask.time}`);
+            return bot.sendMessage(id, `✅ Success! Task scheduled for ${db.scheduledTask.time} (Tashkent Time)`);
         }
     }
 
-    // --- ОБРАБОТКА ВВОДА ---
+    // --- INPUT VALIDATION & STATE ---
     if (u.state === "AWAIT_NAME") {
-        u.tmp_n = text; u.state = "AWAIT_SUM"; saveDB();
+        u.tmp_name = text; u.state = "AWAIT_SUM"; saveDB();
         return bot.sendMessage(id, l.ent_s);
     }
     if (u.state === "AWAIT_SUM") {
-        const s = parseFloat(text.replace(/\s/g, ''));
-        if (isNaN(s) || s <= 0) return bot.sendMessage(id, l.err_num);
-        u.tmp_s = s; u.state = "AWAIT_CURR"; saveDB();
+        const sum = parseFloat(text.replace(/\s/g, ''));
+        if (isNaN(sum) || sum <= 0) return bot.sendMessage(id, l.err_num);
+        u.tmp_sum = sum; u.state = "AWAIT_CURR"; saveDB();
         return bot.sendMessage(id, l.ent_v, { reply_markup: { keyboard: [["USD", "RUB", "UZS"]], resize_keyboard: true } });
     }
     if (u.state === "AWAIT_CURR") {
-        u.goals.push({ title: u.tmp_n, goal: u.tmp_s, collected: 0, cur: text });
+        u.goals.push({ title: u.tmp_name, goal: u.tmp_sum, collected: 0, currency: text });
         u.state = "IDLE"; saveDB();
         return bot.sendMessage(id, l.created, getMenu(id));
     }
-    if (u.state === "TOP_ID") {
+    if (u.state === "TOPUP_ID") {
         const idx = parseInt(text) - 1;
         if (!u.goals[idx]) return bot.sendMessage(id, l.err_num);
-        u.tmp_idx = idx; u.state = "TOP_VAL"; saveDB();
+        u.tmp_idx = idx; u.state = "TOPUP_SUM"; saveDB();
         return bot.sendMessage(id, l.ent_a);
     }
-    if (u.state === "TOP_VAL") {
-        const v = parseFloat(text.replace(/\s/g, ''));
-        if (isNaN(v) || v <= 0) return bot.sendMessage(id, l.err_num);
+    if (u.state === "TOPUP_SUM") {
+        const val = parseFloat(text.replace(/\s/g, ''));
+        if (isNaN(val) || val <= 0) return bot.sendMessage(id, l.err_num);
         const g = u.goals[u.tmp_idx];
-        g.collected += v;
-        u.history.push(`+${v} ${g.cur} -> ${g.title} (${new Date().toLocaleDateString()})`);
+        g.collected += val;
+        u.history.push(`+${val} ${g.currency} -> ${g.title} (${new Date().toLocaleDateString()})`);
         u.state = "IDLE"; saveDB();
         bot.sendMessage(id, l.added, getMenu(id));
         if (g.collected >= g.goal) bot.sendMessage(id, l.goal_done);
         return;
     }
+    if (u.state === "DEL_ID") {
+        const idx = parseInt(text) - 1;
+        if (!u.goals[idx]) return bot.sendMessage(id, l.err_num);
+        u.goals.splice(idx, 1);
+        u.state = "IDLE"; saveDB();
+        return bot.sendMessage(id, l.deleted, getMenu(id));
+    }
 
-    // --- КНОПКИ ---
+    // --- BUTTON ACTIONS ---
     switch (text) {
         case l.m_my:
             if (!u.goals.length) return bot.sendMessage(id, l.no_g);
@@ -230,41 +248,48 @@ bot.on("message", (msg) => {
             u.goals.forEach((g, i) => {
                 let p = Math.min(Math.floor((g.collected / g.goal) * 100), 100);
                 let bar = "█".repeat(Math.floor(p / 10)) + "░".repeat(10 - Math.floor(p / 10));
-                res += `\n${i + 1}. **${g.title}**\n💰 ${g.collected} / ${g.goal} ${g.cur}\n${bar} ${p}%\n`;
+                res += `\n${i + 1}. **${g.title}**\n💰 ${g.collected} / ${g.goal} ${g.currency}\n${bar} ${p}%\n`;
             });
             bot.sendMessage(id, res, { parse_mode: "Markdown" });
             break;
 
         case l.m_add: u.state = "AWAIT_NAME"; saveDB(); bot.sendMessage(id, l.ent_n); break;
-
         case l.m_top:
             if (!u.goals.length) return bot.sendMessage(id, l.no_g);
             let tList = `${l.sel_g}\n\n`;
             u.goals.forEach((g, i) => tList += `${i + 1}. ${g.title}\n`);
-            u.state = "TOP_ID"; saveDB(); bot.sendMessage(id, tList);
+            u.state = "TOPUP_ID"; saveDB(); bot.sendMessage(id, tList);
+            break;
+        case l.m_del:
+            if (!u.goals.length) return bot.sendMessage(id, l.no_g);
+            let dList = `${l.sel_g}\n\n`;
+            u.goals.forEach((g, i) => dList += `${i + 1}. ${g.title}\n`);
+            u.state = "DEL_ID"; saveDB(); bot.sendMessage(id, dList);
             break;
 
         case l.m_stat:
             let total = u.goals.reduce((s, g) => s + g.collected, 0);
-            bot.sendMessage(id, l.stat_msg.replace("{count}", u.goals.length).replace("{total}", total), { parse_mode: "Markdown" });
+            let s_msg = u.lang === "RU" ? `📊 **Статистика:**\nЦелей: ${u.goals.length}\nСобрано: ${total}` : (u.lang === "UZ" ? `📊 **Statistika:**\nMaqsadlar: ${u.goals.length}\nYig'ildi: ${total}` : `📊 **Stats:**\nGoals: ${u.goals.length}\nSaved: ${total}`);
+            bot.sendMessage(id, s_msg, { parse_mode: "Markdown" });
             break;
 
-        case l.m_plan: bot.sendMessage(id, l.plan_msg, { parse_mode: "Markdown" }); break;
+        case l.m_plan:
+            bot.sendMessage(id, l.plan_msg, { parse_mode: "Markdown" });
+            break;
 
         case l.m_hist:
-            let h = u.history.length ? `${l.hist_title}\n\n${u.history.slice(-10).join("\n")}` : l.hist_empty;
-            bot.sendMessage(id, h, { parse_mode: "Markdown" });
+            let h_msg = u.history.length ? `${l.hist_title}\n\n${u.history.slice(-10).join("\n")}` : l.hist_empty;
+            bot.sendMessage(id, h_msg, { parse_mode: "Markdown" });
             break;
 
         case l.m_lang:
-            u.lang = u.lang === "RU" ? "UZ" : "RU"; saveDB();
-            bot.sendMessage(id, u.lang === "RU" ? "🇷🇺 Язык: RU" : "🇺🇿 Til: UZ", getMenu(id));
+            u.lang = u.lang === "RU" ? "UZ" : (u.lang === "UZ" ? "EN" : "RU");
+            saveDB();
+            bot.sendMessage(id, `🌐 Language changed to: ${u.lang}`, getMenu(id));
             break;
 
         case l.m_rem:
-            bot.sendMessage(id, l.rem_set, {
-                reply_markup: { keyboard: [[l.rem_d], [l.rem_w, l.rem_m], [l.rem_s]], resize_keyboard: true }
-            });
+            bot.sendMessage(id, l.rem_set, { reply_markup: { keyboard: [[l.rem_d], [l.rem_w, l.rem_m], [l.rem_s]], resize_keyboard: true } });
             break;
             
         case l.rem_d: u.rem_type = "daily"; saveDB(); bot.sendMessage(id, l.rem_on, getMenu(id)); break;
@@ -274,29 +299,29 @@ bot.on("message", (msg) => {
     }
 });
 
-// Доп. команды админа
+// --- ADMIN TEXT COMMANDS ---
 bot.onText(/\/users/, (m) => {
     if (m.from.id.toString() !== MY_ID) return;
-    let s = "👤 **Users:**\n";
-    Object.values(db.users).forEach(usr => s += `• ${usr.name} (ID: ${usr.id})\n`);
-    bot.sendMessage(MY_ID, s, { parse_mode: "Markdown" });
-});
-
-bot.onText(/\/remindall/, (m) => {
-    if (m.from.id.toString() !== MY_ID) return;
-    Object.values(db.users).forEach(usr => bot.sendMessage(usr.id, LANG[usr.lang].admin_rem).catch(() => {}));
-    bot.sendMessage(MY_ID, "✅ Sent.");
+    let list = "👤 **Active Users:**\n";
+    Object.values(db.users).forEach(usr => list += `• ${usr.name} (@${usr.username || "no"})\n`);
+    bot.sendMessage(MY_ID, list, { parse_mode: "Markdown" });
 });
 
 bot.onText(/\/broadcast/, (m) => {
     if (m.from.id.toString() !== MY_ID) return;
-    bot.sendMessage(MY_ID, "Текст рассылки:");
+    bot.sendMessage(MY_ID, "Enter message text for EVERYONE:");
     bot.once("message", (msg) => {
-        Object.values(db.users).forEach(u => bot.sendMessage(u.id, "📢 **NEWS:**\n\n" + msg.text, { parse_mode: "Markdown" }).catch(() => {}));
-        bot.sendMessage(MY_ID, "✅ Done.");
+        Object.values(db.users).forEach(u => {
+            bot.sendMessage(u.id, `${LANG[u.lang].news_head}\n\n${msg.text}`, { parse_mode: "Markdown" }).catch(() => {});
+        });
+        bot.sendMessage(MY_ID, "✅ Broadcast completed successfully.");
     });
 });
 
-console.log("===============================");
-console.log("MortisPay ULTIMATE 2026 Active");
-console.log("===============================");
+bot.onText(/\/remindall/, (m) => {
+    if (m.from.id.toString() !== MY_ID) return;
+    Object.values(db.users).forEach(u => bot.sendMessage(u.id, LANG[u.lang].cron_msg).catch(() => {}));
+    bot.sendMessage(MY_ID, "✅ Manual reminders sent.");
+});
+
+console.log("MortisPay ULTIMATE 2026 Ready.");
