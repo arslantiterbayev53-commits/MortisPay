@@ -7,15 +7,15 @@ const cron = require("node-cron");
 // CONFIGURATION & INITIALIZATION
 // ==========================================
 const TOKEN = "8748413994:AAFfy4rZiqpneq2YvQM4Pdj8k5yMfd9D_SY";
-const MY_ID = "6736116111"; // ID Арслана
+const MY_ID = "6736116111"; // Арслан
 const DB_FILE = "users.json";
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-app.get("/", (req, res) => res.send("MortisPay Engine 2026: Active 🚀"));
-app.listen(PORT, () => console.log(`[SYSTEM] Server active on port ${PORT}`));
+app.get("/", (req, res) => res.send("MortisPay Engine 2026: Online 🚀"));
+app.listen(PORT, () => console.log(`[SYSTEM] MortisPay Server Active`));
 
 // ==========================================
 // DATABASE LOGIC
@@ -40,16 +40,16 @@ loadDB();
 // ==========================================
 const LANG = {
     RU: {
-        welcome: "👋 Добро пожаловать в **MortisPay**, {name}!",
+        welcome: "👋 Добро пожаловать в **MortisPay**, {name}!\nЭто твой личный цифровой сейф от студии MortisWeb.",
         m_my: "📊 Мои цели", m_add: "➕ Новая цель", m_top: "💰 Пополнить",
         m_del: "🗑 Удалить", m_stat: "📊 Статистика", m_hist: "📜 История",
         m_plan: "📈 План", m_rem: "🔔 Настройка уведомлений", m_lang: "🌐 Язык",
         no_g: "❌ У вас пока нет созданных целей.",
         ent_n: "🏷 Введите название цели:",
-        ent_s: "💵 Какую сумму нужно собрать? (Введите число):",
+        ent_s: "💵 Какую сумму нужно собрать? (Цифрами):",
         ent_v: "💎 Выберите валюту:",
         ent_a: "💳 Какую сумму вы хотите внести сейчас?",
-        created: "✅ Цель успешно создана! Начните копить прямо сейчас.",
+        created: "✅ Цель успешно создана!",
         added: "💰 Баланс цели успешно пополнен!",
         deleted: "🗑 Цель была полностью удалена.",
         rem_set: "🔔 Выберите частоту уведомлений (придут в 8:00 утра):",
@@ -58,7 +58,7 @@ const LANG = {
         rem_d: "Каждый день", rem_w: "Раз в неделю", rem_m: "Раз в месяц", rem_s: "Выключить",
         sel_g: "🔢 Выберите номер цели из вашего списка:",
         goal_done: "🎉 ПОЗДРАВЛЯЕМ! Вы достигли своей цели! 🏆",
-        err_num: "⚠️ Ошибка! Пожалуйста, введите корректное число.",
+        err_num: "⚠️ Ошибка! Введите корректное число.",
         cron_msg: "☀️ Доброе утро! Не забудьте пополнить свою цель сегодня! 💸",
         news_head: "📢 **НОВОСТИ ОБНОВЛЕНИЯ:**",
         hist_title: "📜 **История операций:**",
@@ -70,13 +70,13 @@ const LANG = {
         adm_text: "Введите текст для запланированной рассылки:"
     },
     UZ: {
-        welcome: "👋 **MortisPay**-ga xush kelibsiz, {name}!",
+        welcome: "👋 **MortisPay**-ga xush kelibsiz, {name}!\nBu MortisWeb studiyasidan shaxsiy raqamli seyfingiz.",
         m_my: "📊 Maqsadlarim", m_add: "➕ Yangi maqsad", m_top: "💰 To'ldirish",
         m_del: "🗑 O'chirish", m_stat: "📊 Statistika", m_hist: "📜 Tarix",
         m_plan: "📈 Reja", m_rem: "🔔 Bildirishnomalar", m_lang: "🌐 Til",
         no_g: "❌ Sizda hozircha maqsadlar yo'q.",
         ent_n: "🏷 Maqsad nomini kiriting:",
-        ent_s: "💵 Qancha yig'ish kerak? (Raqam kiriting):",
+        ent_s: "💵 Qancha yig'ish kerak? (Raqamda):",
         ent_v: "💎 Valyutani tanlang:",
         ent_a: "💳 Qancha summa qo'shmoqchisiz?",
         created: "✅ Maqsad muvaffaqiyatli yaratildi!",
@@ -95,9 +95,7 @@ const LANG = {
         hist_empty: "📜 Tarix hozircha bo'sh.",
         stat_head: "📊 **Sizning statistikangiz:**\n• Maqsadlar soni: {count}\n• Jami yig'ildi: {total} {cur}",
         plan_head: "📈 **Moliyaviy reja (1000 USD):**\n• 30 kun: 33.3$ / kun\n• 60 kun: 16.6$ / kun\n• 90 kun: 11.1$ / kun",
-        adm_main: "💎 **Admin paneli:**\n/users - Ro'yxat\n/remindall - Eslatma\n/broadcast - Xabar yuborish\n/schedule - Rejalashtirish",
-        adm_time: "Vaqtni kiriting (HH:MM formatida):",
-        adm_text: "Xabar matnini yozing:"
+        adm_main: "💎 **Admin paneli:**\n/users - Ro'yxat\n/remindall - Eslatma\n/broadcast - Xabar yuborish\n/schedule - Rejalashtirish"
     },
     EN: {
         welcome: "👋 Welcome to **MortisPay**, {name}!",
@@ -125,9 +123,7 @@ const LANG = {
         hist_empty: "📜 History is empty.",
         stat_head: "📊 **Your Stats:**\n• Total goals: {count}\n• Total saved: {total} {cur}",
         plan_head: "📈 **Financial Plan (1000 USD):**\n• 30 days: 33.3$ / day\n• 60 days: 16.6$ / day\n• 90 days: 11.1$ / day",
-        adm_main: "💎 **Admin Panel:**\n/users - List\n/remindall - Ping all\n/broadcast - News\n/schedule - Scheduler",
-        adm_time: "Enter time HH:MM (e.g. 14:30):",
-        adm_text: "Enter message text:"
+        adm_main: "💎 **Admin Panel:**\n/users - List\n/remindall - Ping all\n/broadcast - News\n/schedule - Scheduler"
     }
 };
 
@@ -146,7 +142,7 @@ function getMenu(id) {
 }
 
 // ==========================================
-// CRON SCHEDULERS (TASHKENT)
+// CRON (NOT TOUCHED - WORKS AS REQUESTED)
 // ==========================================
 cron.schedule("0 8 * * *", () => {
     Object.values(db.users).forEach(u => {
@@ -168,7 +164,7 @@ cron.schedule("* * * * *", () => {
 }, { timezone: "Asia/Tashkent" });
 
 // ==========================================
-// MAIN MESSAGE HANDLER
+// MAIN HANDLER
 // ==========================================
 bot.on("message", (msg) => {
     const id = msg.from.id;
@@ -187,7 +183,7 @@ bot.on("message", (msg) => {
         return bot.sendMessage(id, l.welcome.replace("{name}", u.name), { parse_mode: "Markdown", ...getMenu(id) });
     }
 
-    // --- ADMIN PANEL ---
+    // --- ADMIN ---
     if (id.toString() === MY_ID) {
         if (text === "/admin") return bot.sendMessage(id, l.adm_main);
         if (text === "/schedule") { u.state = "ADM_S_T"; saveDB(); return bot.sendMessage(id, l.adm_time); }
@@ -199,7 +195,7 @@ bot.on("message", (msg) => {
         }
     }
 
-    // --- BUTTON ACTIONS ---
+    // --- LOGIC BUTTONS ---
     switch (text) {
         case l.m_my:
             if (!u.goals.length) return bot.sendMessage(id, l.no_g);
@@ -226,34 +222,40 @@ bot.on("message", (msg) => {
         case l.m_plan: bot.sendMessage(id, l.plan_head, { parse_mode: "Markdown" }); break;
 
         case l.m_lang:
-            u.lang = u.lang === "RU" ? "UZ" : (u.lang === "UZ" ? "EN" : "RU");
+            u.lang = (u.lang === "RU") ? "UZ" : (u.lang === "UZ" ? "EN" : "RU");
             saveDB(); bot.sendMessage(id, `🌐 Language: ${u.lang}`, getMenu(id));
             break;
 
         case l.m_add: u.state = "A_N"; saveDB(); bot.sendMessage(id, l.ent_n); break;
+        
         case l.m_top:
             if (!u.goals.length) return bot.sendMessage(id, l.no_g);
             let list = `${l.sel_g}\n\n`;
             u.goals.forEach((g, i) => list += `${i + 1}. ${g.title}\n`);
             u.state = "T_I"; saveDB(); bot.sendMessage(id, list);
             break;
+
         case l.m_del:
             if (!u.goals.length) return bot.sendMessage(id, l.no_g);
             let dList = `${l.sel_g}\n\n`;
             u.goals.forEach((g, i) => dList += `${i + 1}. ${g.title}\n`);
             u.state = "D_I"; saveDB(); bot.sendMessage(id, dList);
             break;
+
         case l.m_rem:
             bot.sendMessage(id, l.rem_set, { reply_markup: { keyboard: [[l.rem_d], [l.rem_w, l.rem_m], [l.rem_s]], resize_keyboard: true } });
             break;
+            
         case l.rem_d: u.rem_type = "daily"; saveDB(); bot.sendMessage(id, l.rem_on, getMenu(id)); break;
         case l.rem_w: u.rem_type = "weekly"; saveDB(); bot.sendMessage(id, l.rem_on, getMenu(id)); break;
         case l.rem_m: u.rem_type = "monthly"; saveDB(); bot.sendMessage(id, l.rem_on, getMenu(id)); break;
         case l.rem_s: u.rem_type = "off"; saveDB(); bot.sendMessage(id, l.rem_off, getMenu(id)); break;
     }
 
-    // --- INPUT PROCESSING ---
-    if (u.state === "A_N") { u.tmp_n = text; u.state = "A_S"; saveDB(); bot.sendMessage(id, l.ent_s); }
+    // --- STATE PROCESSING (FIXED LOGIC) ---
+    if (u.state === "A_N" && text !== l.m_add) { 
+        u.tmp_n = text; u.state = "A_S"; saveDB(); bot.sendMessage(id, l.ent_s); 
+    }
     else if (u.state === "A_S") {
         const s = parseFloat(text.replace(/\s/g, ''));
         if (isNaN(s)) return bot.sendMessage(id, l.err_num);
@@ -266,7 +268,7 @@ bot.on("message", (msg) => {
     }
     else if (u.state === "T_I") {
         const idx = parseInt(text) - 1;
-        if (!u.goals[idx]) return bot.sendMessage(id, l.err_num);
+        if (isNaN(idx) || !u.goals[idx]) return bot.sendMessage(id, l.err_num);
         u.tmp_idx = idx; u.state = "T_S"; saveDB(); bot.sendMessage(id, l.ent_a);
     }
     else if (u.state === "T_S") {
@@ -280,7 +282,7 @@ bot.on("message", (msg) => {
     }
     else if (u.state === "D_I") {
         const idx = parseInt(text) - 1;
-        if (!u.goals[idx]) return bot.sendMessage(id, l.err_num);
+        if (isNaN(idx) || !u.goals[idx]) return bot.sendMessage(id, l.err_num);
         u.goals.splice(idx, 1);
         u.state = "IDLE"; saveDB(); bot.sendMessage(id, l.deleted, getMenu(id));
     }
@@ -294,7 +296,7 @@ bot.onText(/\/broadcast/, (m) => {
         Object.values(db.users).forEach(u => {
             bot.sendMessage(u.id, `${LANG[u.lang].news_head}\n\n${msg.text}`, { parse_mode: "Markdown" }).catch(() => {});
         });
-        bot.sendMessage(MY_ID, "✅ Sent to all users.");
+        bot.sendMessage(MY_ID, "✅ Sent to all.");
     });
 });
 
