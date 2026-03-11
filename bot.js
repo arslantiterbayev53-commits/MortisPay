@@ -3,8 +3,8 @@ const TelegramBot = require("node-telegram-bot-api");
 const express = require("express");
 
 // ===== ВСТАВЬ СВОИ ДАННЫЕ =====
-const TOKEN = "PASTE_YOUR_TOKEN_HERE";
-const MY_ID = "PASTE_YOUR_TELEGRAM_ID";
+const TOKEN = "8748413994:AAFfy4rZiqpneq2YvQM4Pdj8k5yMfd9D_SY";
+const MY_ID = "6736116111";
 // ==============================
 
 const bot = new TelegramBot(TOKEN, { polling: true });
