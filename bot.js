@@ -1,13 +1,3 @@
-const http = require('http');
-// Бу қисм Render учун "мен тирикман" деб сигнал бериб туради
-http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is running!');
-}).listen(process.env.PORT || 3000);
-
-const fs = require('fs');
-const TelegramBot = require('node-telegram-bot-api');
-// ... қолган кодларинг шу ердан давом этади
 const fs = require('fs');
 const TelegramBot = require('node-telegram-bot-api');
 
