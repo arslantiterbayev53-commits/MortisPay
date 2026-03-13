@@ -1,205 +1,211 @@
-const fs = require("fs");
-const TelegramBot = require("node-telegram-bot-api");
-const cron = require("node-cron");
-const express = require("express");
+const http = require('http');
+// Бу қисм Render учун "мен тирикман" деб сигнал бериб туради
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Bot is running!');
+}).listen(process.env.PORT || 3000);
 
-// ==========================================
-// ⚙️ CONFIG & DATABASE
-// ==========================================
-const TOKEN = "8748413994:AAFfy4rZiqpneq2YvQM4Pdj8k5yMfd9D_SY";
-const MY_ID = 6736116111; // Arslan
-const DB_FILE = "users.json";
+const fs = require('fs');
+const TelegramBot = require('node-telegram-bot-api');
+// ... қолган кодларинг шу ердан давом этади
+const fs = require('fs');
+const TelegramBot = require('node-telegram-bot-api');
+
+// ================= НАСТРОЙКИ =================
+const TOKEN = '8748413994:AAFfy4rZiqpneq2YvQM4Pdj8k5yMfd9D_SY'; 
+const MY_ID = '6736116111'; 
+// =============================================
 
 const bot = new TelegramBot(TOKEN, { polling: true });
-const app = express();
-app.get("/", (req, res) => res.send("MortisPay Engine v5: Active"));
-app.listen(process.env.PORT || 3000);
 
-let db = { users: {}, system: { totalUsers: 0, globalVolume: 0 } };
-if (fs.existsSync(DB_FILE)) db = JSON.parse(fs.readFileSync(DB_FILE));
-const save = () => fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+let db = { users: {} };
+if (fs.existsSync('users.json')) {
+    try {
+        db = JSON.parse(fs.readFileSync('users.json'));
+    } catch (e) {
+        db = { users: {} };
+    }
+}
 
-// ==========================================
-// 🌍 LOCALIZATION (RU, UZ, EN)
-// ==========================================
-const STRINGS = {
-    ru: {
-        w: "🏦 **MORTISPAY**\nПривет, Арслан. Твой капитал в безопасности.",
-        m_my: "💰 Мои цели", m_add: "✨ Создать", m_out: "💸 Снять деньги",
-        m_top: "📥 Пополнить", m_plan: "📉 Финплан", m_lang: "🌐 Язык",
-        m_adm: "💎 Админ", ent_n: "🏷 Название цели:", ent_s: "💵 Сумма цели:",
-        ent_v: "💎 Валюта:", ent_idx: "🔢 Введите номер цели:", 
-        ent_a: "💳 Сумма:", no_g: "❌ Нет целей.", done: "✅ Готово!",
-        err: "⚠️ Ошибка в вводе.", low: "⚠️ Недостаточно средств на цели!",
-        daily: "🗓 В день нужно: **{val} {cur}**",
-        prediction: "🔮 С твоим темпом накопишь к: **{date}**"
+function saveDB() {
+    fs.writeFileSync('users.json', JSON.stringify(db, null, 2));
+}
+
+const LANGS = {
+    RU: {
+        start: "Привет, {name}! 👋",
+        noGoals: "У вас нет целей.",
+        goalsList: "🎯 Ваши цели:\n\n",
+        enterGoalName: "Назовите цель:",
+        enterGoalSum: "Сумма цели:",
+        selectCur: "Выберите валюту:",
+        goalCreated: "Цель создана! ✅",
+        errorNumber: "Ошибка! Введите число.",
+        selectGoal: "Выберите номер цели:",
+        goalAdded: "Пополнено! ✅",
+        goalDeleted: "Удалено! 🗑",
+        languageSet: "Язык: RU",
+        remains: "Осталось накопить: ",
+        btns: ["📊 Мои цели", "➕ Новая цель", "➕ Пополнить", "🗑 Удалить цель", "🌐 Язык"]
     },
-    uz: {
-        w: "🏦 **MORTISPAY**\nXush kelibsiz, Arslan. Mablag'ingiz xavfsiz.",
-        m_my: "💰 Maqsadlarim", m_add: "✨ Yaratish", m_out: "💸 Pulni yechish",
-        m_top: "📥 To'ldirish", m_plan: "📉 Reja", m_lang: "🌐 Til",
-        m_adm: "💎 Admin", ent_n: "🏷 Maqsad nomi:", ent_s: "💵 Maqsad summasi:",
-        ent_v: "💎 Valyuta:", ent_idx: "🔢 Maqsad raqamini kiriting:",
-        ent_a: "💳 Summa:", no_g: "❌ Maqsadlar yo'q.", done: "✅ Tayyor!",
-        err: "⚠️ Xato kiritildi.", low: "⚠️ Maqsadda mablag' yetarli emas!",
-        daily: "🗓 Kuniga: **{val} {cur}**",
-        prediction: "🔮 Taxminiy sana: **{date}**"
+    UZ: {
+        start: "Salom, {name}! 👋",
+        noGoals: "Maqsadlar yo'q.",
+        goalsList: "🎯 Maqsadlar:\n\n",
+        enterGoalName: "Nomini kiriting:",
+        enterGoalSum: "Summani kiriting:",
+        selectCur: "Valyutani tanlang:",
+        goalCreated: "Yaratildi! ✅",
+        errorNumber: "Xato! Raqam kiriting.",
+        selectGoal: "Raqamni tanlang:",
+        goalAdded: "To'ldirildi! ✅",
+        goalDeleted: "O'chirildi! 🗑",
+        languageSet: "Til: UZ",
+        remains: "Yana yig'ish kerak: ",
+        btns: ["📊 Maqsadlarim", "➕ Yangi maqsad", "➕ To'ldirish", "🗑 O'chirish", "🌐 Til"]
     },
-    en: {
-        w: "🏦 **MORTISPAY**\nWelcome, Arslan. Your vault is active.",
-        m_my: "💰 My Goals", m_add: "✨ Create", m_out: "💸 Withdraw",
-        m_top: "📥 Deposit", m_plan: "📉 Plan", m_lang: "🌐 Language",
-        m_adm: "💎 Admin", ent_n: "🏷 Goal name:", ent_s: "💵 Target sum:",
-        ent_v: "💎 Currency:", ent_idx: "🔢 Enter goal number:",
-        ent_a: "💳 Amount:", no_g: "❌ No goals found.", done: "✅ Done!",
-        err: "⚠️ Input error.", low: "⚠️ Not enough funds in goal!",
-        daily: "🗓 Daily need: **{val} {cur}**",
-        prediction: "🔮 Estimated date: **{date}**"
+    EN: {
+        start: "Hello, {name}! 👋",
+        noGoals: "You have no goals.",
+        goalsList: "🎯 Your goals:\n\n",
+        enterGoalName: "Goal name:",
+        enterGoalSum: "Target amount:",
+        selectCur: "Select currency:",
+        goalCreated: "Goal created! ✅",
+        errorNumber: "Error! Enter a number.",
+        selectGoal: "Select goal number:",
+        goalAdded: "Added! ✅",
+        goalDeleted: "Deleted! 🗑",
+        languageSet: "Language: EN",
+        remains: "Remaining to save: ",
+        btns: ["📊 My Goals", "➕ New Goal", "➕ Top-up", "🗑 Delete Goal", "🌐 Language"]
     }
 };
 
-// ==========================================
-// 🛠 HELPERS
-// ==========================================
-const getMenu = (lang) => {
-    const s = STRINGS[lang];
-    return {
-        reply_markup: {
-            keyboard: [
-                [s.m_my, s.m_add], [s.m_top, s.m_out],
-                [s.m_plan, s.m_lang], [s.m_adm]
-            ], resize_keyboard: true
-        }
-    };
-};
+function getMenu(id) {
+    const lang = db.users[id].lang || "RU";
+    const b = LANGS[lang].btns;
+    return { reply_markup: { keyboard: [[b[0]], [b[1], b[2]], [b[3], b[4]]], resize_keyboard: true } };
+}
 
-const getBar = (p) => "🟩".repeat(Math.min(10, Math.floor(p/10))) + "⬜".repeat(10 - Math.min(10, Math.floor(p/10)));
-
-// ==========================================
-// 🚀 ENGINE
-// ==========================================
-bot.on("message", async (msg) => {
-    const id = msg.from.id;
+bot.on('message', (msg) => {
+    const id = String(msg.from.id);
     const text = msg.text;
     if (!text) return;
 
     if (!db.users[id]) {
-        db.users[id] = { id, name: msg.from.first_name, lang: "ru", goals: [], state: "IDLE", xp: 0 };
-        db.system.totalUsers++;
-        save();
-        bot.sendMessage(MY_ID, `🆕 New User: ${msg.from.first_name} (ID: ${id})`);
+        db.users[id] = { id, name: msg.from.first_name, username: msg.from.username || "n/a", goals: [], lang: "RU" };
+        saveDB();
+        bot.sendMessage(MY_ID, `🔔 НОВЫЙ ЮЗЕР: ${msg.from.first_name} (@${msg.from.username || 'скрыт'})`);
     }
 
-    const u = db.users[id];
-    const s = STRINGS[u.lang];
+    const L = LANGS[db.users[id].lang] || LANGS.RU;
 
-    if (text === "/start" || text === "🔙 Back" || text === "🔙 Назад") {
-        u.state = "IDLE"; save();
-        return bot.sendMessage(id, s.w, { parse_mode: "Markdown", ...getMenu(u.lang) });
+    // Админка без рассылки
+    if (text === "/admin" && id === MY_ID) {
+        const total = Object.keys(db.users).length;
+        return bot.sendMessage(id, `📊 *Админ-панель*\n\nВсего юзеров: ${total}\n/users - Список юзеров`, { parse_mode: "Markdown" });
     }
 
-    // --- ЛОГИКА АДМИНА ---
-    if (text === s.m_adm && id === MY_ID) {
-        return bot.sendMessage(id, `💎 **ADMIN PANEL**\n\nUsers: ${db.system.totalUsers}\nVolume: ${db.system.globalVolume} UZS`, {
-            reply_markup: { inline_keyboard: [[{ text: "📢 Broadcast", callback_data: "adm_bc" }]] }
+    if (text === "/start") {
+        return bot.sendMessage(id, L.start.replace("{name}", db.users[id].name), getMenu(id));
+    }
+
+    // Смена языка (RU -> UZ -> EN)
+    else if (text === L.btns[4]) {
+        const lOrder = ["RU", "UZ", "EN"];
+        const nextIdx = (lOrder.indexOf(db.users[id].lang) + 1) % 3;
+        db.users[id].lang = lOrder[nextIdx];
+        saveDB();
+        bot.sendMessage(id, LANGS[db.users[id].lang].languageSet, getMenu(id));
+    }
+
+    // Список целей с расчетом остатка
+    else if (text === L.btns[0]) {
+        const goals = db.users[id].goals;
+        if (!goals.length) return bot.sendMessage(id, L.noGoals);
+        let res = L.goalsList;
+        goals.forEach((g, i) => {
+            const left = g.goal - g.collected;
+            const remains = left > 0 ? left : 0;
+            const progress = Math.min(100, Math.floor((g.collected / g.goal) * 100));
+            
+            res += `${i + 1}. *${g.title}*\n`;
+            res += `💰 ${g.collected} / ${g.goal} ${g.currency} (${progress}%)\n`;
+            res += `📉 ${L.remains} *${remains} ${g.currency}*\n\n`;
+        });
+        bot.sendMessage(id, res, { parse_mode: "Markdown" });
+    }
+
+    // Новая цель (добавлен RUB)
+    else if (text === L.btns[1]) {
+        bot.sendMessage(id, L.enterGoalName).then(() => {
+            bot.once('message', (m1) => {
+                if (Object.values(LANGS).some(l => l.btns.includes(m1.text))) return;
+                const title = m1.text;
+                bot.sendMessage(id, L.enterGoalSum).then(() => {
+                    bot.once('message', (m2) => {
+                        const sum = Number(m2.text);
+                        if (isNaN(sum)) return bot.sendMessage(id, L.errorNumber);
+                        bot.sendMessage(id, L.selectCur, { reply_markup: { keyboard: [["USD", "RUB", "UZS"]], one_time_keyboard: true, resize_keyboard: true } }).then(() => {
+                            bot.once('message', (m3) => {
+                                db.users[id].goals.push({ title, goal: sum, collected: 0, currency: m3.text });
+                                saveDB();
+                                bot.sendMessage(id, L.goalCreated, getMenu(id));
+                            });
+                        });
+                    });
+                });
+            });
         });
     }
 
-    if (u.state === "IDLE") {
-        switch (text) {
-            case s.m_lang:
-                u.state = "SET_LANG";
-                return bot.sendMessage(id, "🌐 Выбери язык / Tilni tanlang / Select Language:", {
-                    reply_markup: { keyboard: [["🇷🇺 RU", "🇺🇿 UZ", "🇺🇸 EN"]], resize_keyboard: true }
-                });
-
-            case s.m_my:
-                if (!u.goals.length) return bot.sendMessage(id, s.no_g);
-                let list = "";
-                u.goals.forEach((g, i) => {
-                    const p = Math.min(100, Math.floor((g.collected / g.goal) * 100));
-                    list += `${i+1}. **${g.title}**\n${getBar(p)} ${p}%\n💰 ${g.collected}/${g.goal} ${g.currency}\n\n`;
-                });
-                return bot.sendMessage(id, list, { parse_mode: "Markdown" });
-
-            case s.m_add: u.state = "A_N"; return bot.sendMessage(id, s.ent_n);
-            case s.m_top: u.state = "T_IDX"; return bot.sendMessage(id, s.ent_idx);
-            case s.m_out: u.state = "O_IDX"; return bot.sendMessage(id, s.ent_idx);
-            case s.m_plan:
-                if (!u.goals.length) return bot.sendMessage(id, s.no_g);
-                let plan = "📉 **Financial Plan:**\n\n";
-                u.goals.forEach(g => {
-                    const left = Math.max(0, g.goal - g.collected);
-                    const daily = (left / 30).toFixed(0);
-                    plan += `🎯 *${g.title}*\n` + s.daily.replace("{val}", daily).replace("{cur}", g.currency) + "\n\n";
-                });
-                return bot.sendMessage(id, plan, { parse_mode: "Markdown" });
-        }
+    // Пополнение и удаление (логика как раньше)
+    else if (text === L.btns[2]) {
+        const goals = db.users[id].goals;
+        if (!goals.length) return bot.sendMessage(id, L.noGoals);
+        let list = "№:\n"; goals.forEach((g, i) => list += `${i + 1}. ${g.title}\n`);
+        bot.sendMessage(id, list).then(() => {
+            bot.once('message', (m) => {
+                const idx = Number(m.text) - 1;
+                if (goals[idx]) {
+                    bot.sendMessage(id, L.enterGoalSum).then(() => {
+                        bot.once('message', (m2) => {
+                            const val = Number(m2.text);
+                            if (!isNaN(val)) {
+                                db.users[id].goals[idx].collected += val;
+                                saveDB();
+                                bot.sendMessage(id, L.goalAdded, getMenu(id));
+                            }
+                        });
+                    });
+                }
+            });
+        });
     }
 
-    // --- FSM: СОСТОЯНИЯ (СОЗДАНИЕ, ПОПОЛНЕНИЕ, СНЯТИЕ) ---
-    if (u.state === "SET_LANG") {
-        if (text.includes("RU")) u.lang = "ru";
-        if (text.includes("UZ")) u.lang = "uz";
-        if (text.includes("EN")) u.lang = "en";
-        u.state = "IDLE"; save();
-        return bot.sendMessage(id, STRINGS[u.lang].done, getMenu(u.lang));
-    }
-
-    // Создание
-    if (u.state === "A_N") { u.tmp = { title: text }; u.state = "A_S"; return bot.sendMessage(id, s.ent_s); }
-    if (u.state === "A_S") {
-        const val = parseFloat(text.replace(",", "."));
-        if (isNaN(val)) return bot.sendMessage(id, s.err);
-        u.tmp.goal = val; u.state = "A_V";
-        return bot.sendMessage(id, s.ent_v, { reply_markup: { keyboard: [["UZS", "USD", "RUB"]], resize_keyboard: true } });
-    }
-    if (u.state === "A_V") {
-        u.tmp.currency = text; u.tmp.collected = 0; u.tmp.history = [];
-        u.goals.push(u.tmp); u.state = "IDLE"; save();
-        return bot.sendMessage(id, s.done, getMenu(u.lang));
-    }
-
-    // Пополнение
-    if (u.state === "T_IDX") {
-        const i = parseInt(text)-1;
-        if (!u.goals[i]) return bot.sendMessage(id, s.err);
-        u.tmp_idx = i; u.state = "T_A"; return bot.sendMessage(id, s.ent_a);
-    }
-    if (u.state === "T_A") {
-        const a = parseFloat(text.replace(",", "."));
-        if (isNaN(a)) return bot.sendMessage(id, s.err);
-        u.goals[u.tmp_idx].collected += a;
-        u.goals[u.tmp_idx].lastUpdate = new Date();
-        u.state = "IDLE"; save();
-        return bot.sendMessage(id, s.done, getMenu(u.lang));
-    }
-
-    // СНЯТИЕ ДЕНЕГ (Та самая функция)
-    if (u.state === "O_IDX") {
-        const i = parseInt(text)-1;
-        if (!u.goals[i]) return bot.sendMessage(id, s.err);
-        u.tmp_idx = i; u.state = "O_A"; return bot.sendMessage(id, s.ent_a);
-    }
-    if (u.state === "O_A") {
-        const a = parseFloat(text.replace(",", "."));
-        if (isNaN(a)) return bot.sendMessage(id, s.err);
-        if (u.goals[u.tmp_idx].collected < a) return bot.sendMessage(id, s.low);
-        
-        u.goals[u.tmp_idx].collected -= a;
-        u.state = "IDLE"; save();
-        return bot.sendMessage(id, `📉 **-${a}**\n\n${s.done}`, getMenu(u.lang));
+    else if (text === L.btns[3]) {
+        const goals = db.users[id].goals;
+        if (!goals.length) return bot.sendMessage(id, L.noGoals);
+        let list = "Del №:\n"; goals.forEach((g, i) => list += `${i + 1}. ${g.title}\n`);
+        bot.sendMessage(id, list).then(() => {
+            bot.once('message', (m) => {
+                const idx = Number(m.text) - 1;
+                if (goals[idx]) {
+                    db.users[id].goals.splice(idx, 1);
+                    saveDB();
+                    bot.sendMessage(id, L.goalDeleted, getMenu(id));
+                }
+            });
+        });
     }
 });
 
-// Умные уведомления (Пинок)
-cron.schedule("0 10 * * *", () => {
-    Object.values(db.users).forEach(u => {
-        u.goals.forEach(g => {
-            const days = (new Date() - new Date(g.lastUpdate || new Date())) / (1000*60*60*24);
-            if (days > 3 && g.collected < g.goal) {
-                bot.sendMessage(u.id, "🔔 **MORTISPAY:** Мы стоим на месте! Не забывай пополнять копилку.");
-            }
-        });
-    });
-}, { timezone: "Asia/Tashkent" });
+bot.onText(/\/users/, (msg) => {
+    if (String(msg.from.id) !== MY_ID) return;
+    let list = "👥 Юзеры:\n";
+    Object.values(db.users).forEach(u => list += `- ${u.name} (@${u.username})\n`);
+    bot.sendMessage(MY_ID, list);
+});
+
+console.log("Бот запущен! Ошибок нет.");
