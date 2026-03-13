@@ -11,6 +11,7 @@ const MY_ID = 6736116111; // Admin ID (Arslan)
 const DB_FILE = "mortis_vault.json";
 
 const bot = new TelegramBot(TOKEN, { polling: true });
+
 const app = express();
 app.get("/", (req, res) => res.send("🏦 MortisPay Engine: Full Active"));
 app.listen(process.env.PORT || 3000);
@@ -18,14 +19,14 @@ app.listen(process.env.PORT || 3000);
 // ==========================================
 // 💾 DATABASE & LOCALIZATION
 // ==========================================
-let db = { 
-  users: {}, 
-  system: { 
-    totalUsers: 0, 
-    cron_hour: 8, 
-    cron_minute: 0, 
-    cron_timezone: "Asia/Tashkent" 
-  } 
+let db = {
+  users: {},
+  system: {
+    totalUsers: 0,
+    cron_hour: 8,
+    cron_minute: 0,
+    cron_timezone: "Asia/Tashkent"
+  }
 };
 
 const STRINGS = {
@@ -120,12 +121,20 @@ const STRINGS = {
 
 function loadDB() {
   if (fs.existsSync(DB_FILE)) {
-    try { db = JSON.parse(fs.readFileSync(DB_FILE)); } catch (e) { console.error("DB Load Error:", e); }
+    try {
+      db = JSON.parse(fs.readFileSync(DB_FILE));
+    } catch (e) {
+      console.error("DB Load Error:", e);
+    }
   }
 }
 
 function saveDB() {
-  try { fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2)); } catch (e) { console.error("DB Save Error:", e); }
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+  } catch (e) {
+    console.error("DB Save Error:", e);
+  }
 }
 
 loadDB();
@@ -188,8 +197,12 @@ function initCron() {
           bot.sendMessage(user.id, msg, { parse_mode: "Markdown" }).catch(() => {});
         }
       });
+      // Daily admin report
       const s = STRINGS[db.users[MY_ID]?.lang || 'ru'];
-      bot.sendMessage(MY_ID, `📊 **Daily Admin Report**\n${s.adm_users.replace('{count}', db.system.totalUsers)}`).catch(() => {});
+      bot.sendMessage(
+        MY_ID,
+        `📊 **Daily Admin Report**\n${s.adm_users.replace('{count}', db.system.totalUsers)}`
+      ).catch(() => {});
     },
     { timezone: db.system.cron_timezone || "Asia/Tashkent" }
   );
@@ -202,23 +215,26 @@ let cronTask = initCron();
 // ==========================================
 bot.on("message", (msg) => {
   if (!msg.from || !msg.text) return;
+
   const id = msg.from.id;
   const text = msg.text.trim();
   const username = msg.from.username || 'none';
 
   if (!db.users[id]) {
-    db.users[id] = { 
-      id, 
-      name: msg.from.first_name, 
-      username, 
-      goals: [], 
-      history: [], 
-      state: "IDLE", 
-      reminders: true, 
-      lang: "ru" 
+    db.users[id] = {
+      id,
+      name: msg.from.first_name,
+      username,
+      goals: [],
+      history: [],
+      state: "IDLE",
+      reminders: true,
+      lang: "ru"
     };
     db.system.totalUsers++;
     saveDB();
+
+    // Notify admin about new user
     const sAdmin = STRINGS[db.users[MY_ID]?.lang || 'ru'];
     const newUserMsg = sAdmin.new_user
       .replace('{name}', db.users[id].name)
@@ -230,6 +246,7 @@ bot.on("message", (msg) => {
   const u = db.users[id];
   const s = STRINGS[u.lang];
 
+  // --- 💎 ADMIN COMMANDS ---
   if (id === MY_ID) {
     if (text === "/admin") {
       u.state = "ADMIN";
@@ -255,6 +272,7 @@ bot.on("message", (msg) => {
           return bot.sendMessage(id, "✅ OK", getUserMenu(u.lang));
       }
     } else if (u.state === "ADMIN_BROADCAST") {
+      // Send broadcast to all users
       Object.values(db.users).forEach(user => {
         bot.sendMessage(user.id, text, { parse_mode: "Markdown" }).catch(() => {});
       });
@@ -288,6 +306,7 @@ bot.on("message", (msg) => {
     return bot.sendMessage(id, s.welcome.replace("{name}", u.name), { parse_mode: "Markdown", ...getUserMenu(u.lang) });
   }
 
+  // --- 💰 USER LOGIC ---
   if (u.state === "IDLE") {
     switch (text) {
       case s.m_my:
@@ -295,51 +314,67 @@ bot.on("message", (msg) => {
         let gList = `💰 **${s.m_my}:**\n\n`;
         u.goals.forEach((g, i) => {
           const p = g.goal > 0 ? Math.min(Math.floor((g.collected / g.goal) * 100), 100) : 0;
-          gList += `${i+1}. ${g.title}\n${g.collected}/${g.goal} ${g.currency}\n${getBar(p)} ${p}%\n\n`;
+          gList += `${i + 1}. *${g.title}*\n${g.collected}/${g.goal} ${g.currency}\n${getBar(p)} ${p}%\n\n`;
         });
         return bot.sendMessage(id, gList, { parse_mode: "Markdown" });
+
       case s.m_add:
         u.state = "A_N";
         saveDB();
         return bot.sendMessage(id, s.ent_n);
+
       case s.m_top:
         if (!u.goals.length) return bot.sendMessage(id, s.no_g);
         u.state = "T_I";
         saveDB();
         return bot.sendMessage(id, s.goal_num);
+
       case s.m_del:
         if (!u.goals.length) return bot.sendMessage(id, s.no_g);
         u.state = "D_I";
         saveDB();
         return bot.sendMessage(id, s.del_num);
+
       case s.m_stat:
         const totalsCollected = getTotals(u.goals);
         const totalGoals = u.goals.length;
-        return bot.sendMessage(id, `📊 ${s.m_stat}:\n\nGoals: ${totalGoals}\nTotal Saved: ${Object.keys(totalsCollected).length ? formatTotals(totalsCollected) : 0}`);
+        return bot.sendMessage(
+          id,
+          `📊 ${s.m_stat}:\n\nGoals: ${totalGoals}\nTotal Saved: ${Object.keys(totalsCollected).length ? formatTotals(totalsCollected) : '0'}`
+        );
+
       case s.m_hist:
-        const hText = u.history.length ? `📜 **${s.m_hist}:**\n\n${u.history.slice(-10).join("\n")}` : s.empty;
+        const hText = u.history.length
+          ? `📜 **${s.m_hist}:**\n\n${u.history.slice(-10).join("\n")}`
+          : s.empty;
         return bot.sendMessage(id, hText, { parse_mode: "Markdown" });
+
       case s.m_plan:
         if (!u.goals.length) return bot.sendMessage(id, s.no_g);
         const totalsGoal = getTotals(u.goals, true);
-        const totalsColl = getTotals(u.goals);
+        const totalsCollectedPlan = getTotals(u.goals);
         let planText = `${s.plan_head}\n\n`;
         Object.keys(totalsGoal).forEach(c => {
           const tG = totalsGoal[c];
-          const tC = totalsColl[c] || 0;
+          const tC = totalsCollectedPlan[c] || 0;
           const totalP = tG > 0 ? Math.min(Math.floor((tC / tG) * 100), 100) : 0;
           planText += `Currency: ${c}\nTarget: ${tG}\nSaved: ${tC}\nLeft: ${tG - tC}\n${getBar(totalP)} ${totalP}%\n\n`;
         });
         return bot.sendMessage(id, planText, { parse_mode: "Markdown" });
+
       case s.m_rem:
         u.reminders = !u.reminders;
         saveDB();
         return bot.sendMessage(id, u.reminders ? s.rem_on : s.rem_off);
+
       case s.m_lang:
         u.state = "SET_LANG";
         saveDB();
-        return bot.sendMessage(id, "🌍 Language / Til / Язык:", { 
-          reply_markup: { keyboard: [["🇷🇺 Русский", "🇺🇸 English", "🇺🇿 O'zbek"]], resize_keyboard: true }
+        return bot.sendMessage(id, "🌍 Language / Til / Язык:", {
+          reply_markup: {
+            keyboard: [["🇷🇺 Русский", "🇺🇸 English", "🇺🇿 O'zbek"]],
+            resize_keyboard: true
+          }
         });
     }
   } else if (u.state === "SET_LANG") {
@@ -350,22 +385,34 @@ bot.on("message", (msg) => {
     saveDB();
     return bot.sendMessage(id, "✅ OK", getUserMenu(u.lang));
   } else if (u.state === "A_N") {
-    u.tmp_n = text; u.state = "A_S"; saveDB();
+    u.tmp_n = text;
+    u.state = "A_S";
+    saveDB();
     return bot.sendMessage(id, s.ent_s);
   } else if (u.state === "A_S") {
     const val = parseFloat(text.replace(',', '.'));
     if (isNaN(val) || val <= 0) return bot.sendMessage(id, s.err_num);
-    u.tmp_s = val; u.state = "A_C"; saveDB();
-    return bot.sendMessage(id, s.ent_v, { reply_markup: { keyboard: [["USD", "RUB", "UZS"]], resize_keyboard: true }});
+    u.tmp_s = val;
+    u.state = "A_C";
+    saveDB();
+    return bot.sendMessage(id, s.ent_v, {
+      reply_markup: {
+        keyboard: [["USD", "RUB", "UZS"]],
+        resize_keyboard: true
+      }
+    });
   } else if (u.state === "A_C") {
-    if (!["USD", "RUB", "UZS"].includes(text.toUpperCase())) return bot.sendMessage(id, "⚠️ Invalid currency!");
-    u.goals.push({ title: u.tmp_n, goal: u.tmp_s, collected: 0, currency: text.toUpperCase() });
-    u.state = "IDLE"; saveDB();
+    if (!["USD", "RUB", "UZS"].includes(text)) return bot.sendMessage(id, "⚠️ Invalid currency!");
+    u.goals.push({ title: u.tmp_n, goal: u.tmp_s, collected: 0, currency: text });
+    u.state = "IDLE";
+    saveDB();
     return bot.sendMessage(id, s.created, getUserMenu(u.lang));
   } else if (u.state === "T_I") {
     const idx = parseInt(text) - 1;
     if (isNaN(idx) || !u.goals[idx]) return bot.sendMessage(id, "⚠️ Invalid number!");
-    u.tmp_idx = idx; u.state = "T_S"; saveDB();
+    u.tmp_idx = idx;
+    u.state = "T_S";
+    saveDB();
     return bot.sendMessage(id, s.ent_a);
   } else if (u.state === "T_S") {
     const amt = parseFloat(text.replace(',', '.'));
@@ -373,13 +420,15 @@ bot.on("message", (msg) => {
     const g = u.goals[u.tmp_idx];
     g.collected += amt;
     u.history.push(`📥 +${amt} ${g.currency} | ${g.title}`);
-    u.state = "IDLE"; saveDB();
+    u.state = "IDLE";
+    saveDB();
     return bot.sendMessage(id, s.added, getUserMenu(u.lang));
   } else if (u.state === "D_I") {
     const idx = parseInt(text) - 1;
     if (isNaN(idx) || !u.goals[idx]) return bot.sendMessage(id, "⚠️ Invalid number!");
     u.goals.splice(idx, 1);
-    u.state = "IDLE"; saveDB();
+    u.state = "IDLE";
+    saveDB();
     return bot.sendMessage(id, s.deleted, getUserMenu(u.lang));
   }
 });
